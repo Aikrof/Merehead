@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Local .env
+if [ -f docker/.env ]; then
+    # Load Environment Variables from docker/.env file
+    export $(cat docker/.env | grep -v '#' | awk '/=/ {print $1}')
+
+    # Basic exec
+#    docker exec -it php-$SERVER_ALIAS chmod 777 -R storage/
+    docker exec -it php-$SERVER_ALIAS composer install
+    docker exec -it php-$SERVER_ALIAS chmod 777 -R vendor/ storage/ composer.lock
+
+    # laravel artisan commands
+    docker exec -it php-$SERVER_ALIAS php artisan key:generate
+fi

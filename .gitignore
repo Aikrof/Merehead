@@ -1,0 +1,36 @@
+# phpStorm project files
+/.idea
+
+# node js
+/node_modules
+
+# public
+/public/hot
+/public/storage
+
+# storage
+/storage/*.key
+
+# vendor
+/vendor
+
+# env file
+.env
+.env.backup
+
+# php unit
+.phpunit.result.cache
+
+# composer itself
+composer.phar
+
+# Mac DS_Store Files
+.DS_Store
+
+# CodeSniffer configuration
+/phpcs.xml
+
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log

@@ -1,0 +1,54 @@
+version: '3'
+
+services:
+  nginx:
+    image: "nginx:${NGINX_VERSION}"
+    container_name: "nginx-${SERVER_ALIAS}"
+    volumes:
+      - "${PROJECT_ROOT}:/data"
+      - "${NGINX_CONFIG_FILE}:/etc/nginx/conf.d/default.conf"
+    ports:
+      - "${LOCAL_PORT}:80"
+    environment:
+      - "VIRTUAL_HOST=${SERVER_NAME}"
+    depends_on:
+      - "php-fpm"
+      - "mysql"
+    networks:
+      default:
+        aliases:
+          - "${SERVER_ALIAS}"
+
+  php-fpm:
+    build: "${PHP_DOCKER_FILE}"
+    container_name: "php-${SERVER_ALIAS}"
+    hostname: "${SERVER_ALIAS}"
+    volumes:
+      - "${PROJECT_ROOT}:/data"
+    depends_on:
+      - "phpmyadmin"
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: "phpmyadmin-${SERVER_ALIAS}"
+    ports:
+      - "8080:80"
+    environment:
+      - "PMA_ARBITRARY=1"
+      - "PMA_HOST=${MYSQL_HOST}"
+    depends_on:
+      - "mysql"
+    links:
+      - mysql:mysql
+
+  mysql:
+    image: "mysql:${MYSQL_VERSION}"
+    container_name: "mysql-${SERVER_ALIAS}"
+    environment:
+      - "MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}"
+      - "MYSQL_USER=${MYSQL_USER}"
+      - "MYSQL_PASSWORD=${MYSQL_PASSWORD}"
+    ports:
+      - "${MYSQL_PORT}:3306"
+    volumes:
+      - "${PROJECT_ROOT}:/data/mysql"
