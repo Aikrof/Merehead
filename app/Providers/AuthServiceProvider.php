@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Core\Rest\JwtBearerAuthenticationGuard;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
 class AuthServiceProvider extends ServiceProvider
@@ -13,7 +15,6 @@ class AuthServiceProvider extends ServiceProvider
      * @var array
      */
     protected $policies = [
-        // 'App\Model' => 'App\Policies\ModelPolicy',
     ];
 
     /**
@@ -25,6 +26,8 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
-        //
+        Auth::extend('token', function ($app, $name, array $config) {
+            return new JwtBearerAuthenticationGuard(Auth::createUserProvider($config['provider']), $app['request']);
+        });
     }
 }

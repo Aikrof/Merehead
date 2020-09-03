@@ -9,6 +9,7 @@ declare(strict_types = 1);
 
 namespace App\Core\Form;
 
+use App\Core\Rest\HttpStatusCode;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -59,6 +60,6 @@ abstract class BaseForm extends FormRequest
             "error" => $message,
         ];
 
-        throw new HttpResponseException(response()->json($error, 422));
+        throw new HttpResponseException(response()->json($error, HttpStatusCode::UNPROCESSABLE_ENTITY));
     }
 }

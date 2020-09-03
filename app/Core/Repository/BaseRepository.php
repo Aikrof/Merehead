@@ -9,54 +9,46 @@ declare(strict_types = 1);
 
 namespace App\Core\Repository;
 
+use App\Core\Entity\BaseEntity;
 use App\Core\Entity\EntityInterface;
-use DB;
+use App\Core\Query\QueryBuilder;
+use Illuminate\Database\Connection;
 use Aikrof\Hydrator\Hydrator;
 use App\Exceptions\EntityNotFoundException;
 use App\Exceptions\UndefinedOperatorException;
 
 /**
  * Class BaseRepository
+ *
+ * @var string $from
  */
 abstract class BaseRepository implements RepositoryInterface
 {
     /**
-     * @var DB
+     * @var QueryBuilder
      */
-    protected $connection;
+    private $query;
 
     /**
-     * @var string[]
-     */
-    private $operators = [
-        'update',
-        'select',
-        'create',
-        'insert',
-        'delete',
-    ];
-
-    /**
-     * Repository constructor.
+     * BaseRepository constructor.
      *
-     * @param DB $db
+     * @param Connection $connection
      */
-    public function __construct(DB $db)
+    public function __construct(Connection $connection)
     {
-        $this->connection = $db;
+        $this->query = new QueryBuilder($connection);
     }
 
     /**
-     * Get current table, this table have same name like entity
-     * with we will mapped data from this table.
+     * Get table, this table have same name with entity.
+     *
+     * @param string|null $entity
      *
      * @return string
-     *
-     * @throws EntityNotFoundException
      */
-    protected function getTable(): string
+    protected function getTable(string $entity = null): string
     {
-        $entity = $this->getEntity();
+        $entity = $entity ?? $this->getEntity();
 
         if ($entity === null || !\class_exists($entity)) {
             throw new EntityNotFoundException;
@@ -72,45 +64,81 @@ abstract class BaseRepository implements RepositoryInterface
         return \mb_strtolower($table);
     }
 
-
-    protected function getQuery(string $query, array $values = [])
+    /**
+     * @param string|null $tableName
+     *
+     * @return QueryBuilder
+     */
+    protected function getQuery(?string $tableName = null): QueryBuilder
     {
-        $operator = preg_replace('/ .+/', '', $query);
+        $this->query->setTable($tableName ?: $this->getTable());
 
-        if (!\in_array($operator, $this->operators, true)) {
-            throw new UndefinedOperatorException("Undefined operator `{$operator}`");
-        }
-
-        return $this->connection::$operator($query, $values);
+        return $this->query;
     }
 
+    /**
+     * Check if value exist in table.
+     *
+     * @param string    $field
+     * @param mixed     $value
+     *
+     * @return bool
+     */
     public function valueExist(string $field, $value): bool
     {
-        $query = $this->getQuery("select {$field} from {$this->getTable()} where {$field} = ?", [$value]);
-
-        return (bool) $query;
+        return $this->getQuery()->where($field, $value)->exists();
     }
 
     /**
      * Save data to DB.
      *
      * @param EntityInterface $entity
+     * @param array $exclude
+     * @param array $include
      *
      * @return bool
-     *
-     * @throws EntityNotFoundException
      */
-    public function save(EntityInterface $entity): bool
+    public function save(EntityInterface $entity, array $exclude = [], array $include = []): bool
     {
-        $rawData = Hydrator::extract($entity, [], true);
-        $keys = implode(', ', array_keys($rawData));
-        $values = implode(', ', array_map(function ($value){
-            return "'{$value}'";
-        }, $rawData));
+        $rawData = Hydrator::extract($entity, $exclude, true);
 
-        $query = $this->getQuery("insert into {$this->getTable()} ({$keys}) values({$values})");
+        if (!empty($include)) {
+            $rawData = \array_merge($rawData, $include);
+        }
 
-        return (bool) $query;
+        return (bool) $this->getQuery()->insert($rawData);
+    }
+
+    /**
+     * Update data in DB
+     *
+     * @param EntityInterface $entity
+     *
+     * @param array $exclude
+     * @param array $include
+     * @return bool
+     */
+    public function update(EntityInterface $entity, array $exclude = [], array $include = []): bool
+    {
+        $rawData = Hydrator::extract($entity, $exclude, true);
+
+        if (!empty($include)) {
+            $rawData = \array_merge($rawData, $include);
+        }
+
+        return (bool) $this->getQuery()->where('uid', $entity->getUid())->update($rawData);
+    }
+
+    /**
+     * Delete data from DB
+     *
+     * @param EntityInterface $entity
+     *
+     * @return bool
+     */
+    public function delete(EntityInterface $entity): bool
+    {
+        return (bool) $this->getQuery()->where('uid', $entity->getUid())->delete();
     }
 
     /**
@@ -126,11 +154,20 @@ abstract class BaseRepository implements RepositoryInterface
      */
     public function find(string $fieldValue, string $fieldKey = 'uid'): ?EntityInterface
     {
-        $query = $this->getQuery("select * from {$this->getTable()} where `{$fieldKey}` = '{$fieldValue}'");
+        return $this->getQuery()->where($fieldKey, $fieldValue)->first();
+    }
 
-        $data = (array) \current($query);
-
-        return !empty($query) ? Hydrator::hydrate($this->getEntity(), $data) : null;
+    /**
+     * Get all data from table, by key - value.
+     *
+     * @param string $fieldValue
+     * @param string $fieldKey
+     *
+     * @return EntityInterface[]|null
+     */
+    public function findAll(string $fieldValue, string $fieldKey = 'uid'): ?array
+    {
+        return $this->getQuery()->where($fieldKey, $fieldValue)->get();
     }
 
     /**
@@ -141,8 +178,18 @@ abstract class BaseRepository implements RepositoryInterface
      * @throws EntityNotFoundException
      * @throws UndefinedOperatorException
      */
-    public function getByUid(string $uid): ?EntityInterface
+    public function findByUid(string $uid): ?EntityInterface
     {
-        return $this->find($uid);
+        return $this->getQuery()->find($uid);
+    }
+
+    /**
+     * Get all data from table
+     *
+     * @return BaseEntity[]
+     */
+    public function getAll(): array
+    {
+        return $this->getQuery()->get();
     }
 }

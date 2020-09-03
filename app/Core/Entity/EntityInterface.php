@@ -16,5 +16,26 @@ use JsonSerializable;
  */
 interface EntityInterface extends JsonSerializable
 {
+    /**
+     * Generate Uid, if it is not set.
+     *
+     * @return static
+     */
+    public function generateUid(): self;
 
+    /**
+     * Validate uid.
+     *
+     * @param string $uid
+     *
+     * @return bool
+     */
+    public function validateUid(string $uid): bool;
+
+    /**
+     * Hide fields
+     *
+     * @return array
+     */
+    public function hide(): array;
 }

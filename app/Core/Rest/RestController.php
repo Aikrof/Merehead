@@ -18,7 +18,7 @@ use Illuminate\Http\JsonResponse;
 /**
  * Class RestController
  */
-class RestController extends BaseController
+abstract class RestController extends BaseController
 {
     /**
      * @var \Illuminate\Http\Request
@@ -51,13 +51,13 @@ class RestController extends BaseController
     }
 
     /**
-     * @param string $content
+     * @param mixed $content
      *
      * @return JsonResponse
      */
-    protected function prepareContent($content = ''): JsonResponse
+    protected function prepareContent($content): JsonResponse
     {
-        $responseData = $content;
+        $responseData = !empty($content) ? $content : null;
 
         if (\is_object($content) === true) {
             $responseData = ($content instanceof JsonSerializable)

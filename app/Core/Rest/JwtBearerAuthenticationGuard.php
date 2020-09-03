@@ -123,7 +123,7 @@ class JwtBearerAuthenticationGuard implements Guard
         $uid = $token->getClaim('uid');
         $jti = $token->getClaim('jti');
 
-        $user = $this->repository->getByUid($uid);
+        $user = $this->repository->findByUid($uid);
         if ($user === null || $user->getJwtUid() !== $jti) {
             return false;
         }

@@ -19,12 +19,17 @@ use Ramsey\Uuid\Uuid;
  */
 abstract class BaseEntity implements EntityInterface
 {
-    use HydratorTrait, DateTrait;
+    use HydratorTrait, EntityTrait;
 
     /**
      * @var string
      */
     protected $uid;
+
+    /**
+     * @var array
+     */
+    protected $hide;
 
     /**
      * @return string
@@ -73,10 +78,12 @@ abstract class BaseEntity implements EntityInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Hide fields
+     *
+     * @return array
      */
-    public function jsonSerialize ()
+    public function hide(): array
     {
-        return $this->extractData([], true);
+        return [];
     }
 }

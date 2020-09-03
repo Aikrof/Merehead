@@ -1,8 +1,18 @@
 <?php
+/**
+ * @link https://github.com/Aikrof
+ * @package App\Exceptions
+ * @author Denys <AikrofStark@gmail.com>
+ */
+
+declare(strict_types = 1);
 
 namespace App\Exceptions;
 
+use App\Core\Rest\HttpStatusCode;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -50,6 +60,13 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Throwable $exception)
     {
+        if ($exception instanceof NotFoundHttpException) {
+            $exception = new HttpResponseException(
+                response()->json(['message' => 'Not Found'],
+                    HttpStatusCode::NOT_FOUND)
+            );
+        }
+
         return parent::render($request, $exception);
     }
 }

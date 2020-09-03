@@ -80,7 +80,7 @@ trait DateTrait
     }
 
     /**
-     * @param float $dateCreated
+     * @param float|null $dateCreated
      *
      * @return static
      */
@@ -100,12 +100,14 @@ trait DateTrait
     }
 
     /**
-     * @param float $dateUpdated
+     * @param float|null $dateUpdated
      *
      * @return static
      */
     public function setDateUpdated(float $dateUpdated = null): self
     {
+        $dateUpdated = $dateUpdated ?? self::getCurrentTime();
+
         $this->dateUpdated = $dateUpdated;
 
         return $this;
